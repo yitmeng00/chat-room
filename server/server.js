@@ -58,9 +58,11 @@ wss.on("close", () => {
 });
 
 function broadcast(message) {
-    clients.forEach((client) => {
+    clients.forEach((clientId, client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(message);
+        } else {
+            console.error("WebSocket connection is not open.");
         }
     });
 }
