@@ -13,22 +13,39 @@ const wss = new WebSocket.Server({ server });
 
 // WebSocket server event handling
 wss.on("connection", (socket) => {
-    console.log("Connection started.");
+    console.log(`Connection started.`);
 
-    // Handle incoming WebSocket messages
+    // Handle incoming messages from clients
     socket.on("message", (message) => {
-        console.log(`Incoming msg: ${message}`);
+        console.log(`Client msg: ${message}`);
+        console.log(`Msg Type: ${typeof message}`);
+        console.log(`Msg toString: ${message.toString()}`);
+
+        // Broadcast the received message to all connected clients
+        wss.clients.forEach(function each(client) {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message.toString());
+            }
+        });
     });
 
-    // Handle WebSocket connection closing
+    // Handle client disconnection
     socket.on("close", () => {
-        console.log("Connection closed.");
+        console.log(`Connection closed.`);
+        socket.terminate();
+
+        // Close the WebSocket server if there are no connected clients
+        if (wss.clients.size == 0) wss.close();
     });
+});
+
+wss.on("close", () => {
+    console.log("Server is closed");
 });
 
 // Define a route
 app.get("/", (req, res) => {
-    res.send("Hello, World!");
+    res.send(`Hello, World!`);
 });
 
 // Start the server
