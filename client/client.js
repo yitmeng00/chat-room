@@ -4,12 +4,12 @@ const socket = new WebSocket("ws://127.0.0.1:3000/server/");
 // Handle WebSocket connection events
 socket.onopen = () => {
     document.getElementById("client__connection-status").innerHTML =
-        "Connected to Server";
+        "Online";
 };
 
 socket.onclose = () => {
     document.getElementById("client__connection-status").innerHTML =
-        "Disconnected to Server";
+        "Offline";
 };
 
 socket.onerror = (event) => {
