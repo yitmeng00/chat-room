@@ -11,50 +11,56 @@
         <!-- JavaScript source -->
         <script src="client.js?v=1.0.1" defer></script>
         <!-- Font awesome CDN -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        />
     </head>
 
     <body>
         <main class="px-60 py-20 h-screen">
-            <div class="client__chatroom-container border border-black flex flex-col h-full">
-                <div class="client__chat-header p-3 border-b border-black flex justify-between items-center">
+            <div
+                class="client__chatroom-container border border-black flex flex-col h-full"
+            >
+                <div
+                    class="client__chat-header p-3 border-b border-black flex justify-between items-center"
+                >
                     <section>
-                        <h2 class="text-3xl">Chat Room</h2>
+                        <div>
+                            <p>
+                                <span class="font-bold">Status: </span>
+                                <span id="client__connection-status"></span>
+                            </p>
+                        </div>
                     </section>
 
                     <section class="flex gap-4">
                         <div>
-                            <p>
-                                Status:
-                                <span id="client__connection-status"></span>
-                            </p>
+                            <button id="client__close-connection-btn">
+                                <i class="fa-solid fa-xmark fa-2xl hover:text-red-600"></i>
+                            </button>
                         </div>
-                        <div><i class="fa-solid fa-xmark fa-2xl"></i></div>
                     </section>
                 </div>
 
-                <div class="client__conversation flex flex-col grow overflow-hidden">
+                <div
+                    class="client__conversation flex flex-col grow overflow-hidden"
+                >
                     <section class="p-3 overflow-y-scroll grow">
                         <div id="client__messages"></div>
                     </section>
 
-                    <section class="p-3 border-t border-black">
+                    <section class="p-3 border-t border-black flex gap-5">
                         <input
                             type="text"
                             id="client__input-msg"
-                            class="p-2 border border-black"
+                            class="p-2 border border-black grow"
                         />
                         <button
                             id="client__send-msg-btn"
-                            class="p-2 border border-black"
+                            class="p-2 border border-black hover:bg-slate-200 w-2/12"
                         >
                             Send
-                        </button>
-                        <button
-                            id="client__close-connection-btn"
-                            class="p-2 border border-black"
-                        >
-                            Disconnect
                         </button>
                     </section>
                 </div>

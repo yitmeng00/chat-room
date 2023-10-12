@@ -23,8 +23,11 @@ wss.on("connection", (socket) => {
 
     clients.set(socket, clientId);
 
-    // Notify all clients when a new user joins the chat
-    broadcast(`Client ${clientId} joined the room`);
+    // Notify all clients when a new client joins the room
+    broadcast(`Client ${clientId} joined the room.`);
+
+    // Notify the newly connected client with a welcome message
+    socket.send("Welcome to the room!");
 
     // Handle incoming messages from clients
     socket.on("message", (message) => {
@@ -46,7 +49,7 @@ wss.on("connection", (socket) => {
         clients.delete(socket);
         
         // Notify all clients when a user leaves the chat
-        broadcast(`Client ${clientId} left the room`);
+        broadcast(`Client ${clientId} left the room.`);
 
         // Close the WebSocket server if there are no connected clients
         if (wss.clients.size == 0) wss.close();
