@@ -18,38 +18,62 @@ const clients = new Map();
 wss.on("connection", (socket) => {
     console.log(`Connection started.`);
 
-    // Generate a unique client ID
-    const clientId = generateClientId();
-
-    clients.set(socket, clientId);
-
-    // Notify all clients when a new client joins the room
-    broadcast(`Client ${clientId} joined the room.`);
-
-    // Notify the newly connected client with a welcome message
-    socket.send("Welcome to the room!");
-
     // Handle incoming messages from clients
-    socket.on("message", (message) => {
-        console.log(`Message from Client ${clientId}: ${message}`);
-        console.log(`Msg Type: ${typeof message}`);
-        console.log(`Msg toString: ${message.toString()}`);
+    socket.on("message", (messages) => {
+        try {
+            const data = JSON.parse(messages);
 
-        // Broadcast the received message with the client's name to all connected clients
-        broadcast(`Client ${clientId}: ${message}`);
+            if (data.type === "name") {
+                const { name } = data;
+
+                // Generate a unique client ID
+                const clientId = generateClientId();
+
+                if (name === "anonymous") {
+                    // If the client joined as a guest, store the ID and an empty name
+                    clients.set(socket, { clientName: "", clientID: clientId });
+                } else {
+                    // If the client joined with a name, store both name and ID
+                    clients.set(socket, { clientName: name, clientID: clientId });
+                }
+
+                const { clientName, clientID } = clients.get(socket);
+                const client = clientName || `Guest ${clientID}`;
+
+                broadcast(`${client} joined the room.`);
+
+                socket.send("Welcome to the room!");
+
+                console.log(`Client Name: ${client}`);
+            } else if (data.type === "message") {
+                const { message } = data;
+                
+                const { clientName, clientID } = clients.get(socket);
+                const client = clientName || `Guest ${clientID}`;
+
+                broadcast(`${client}: ${message}`);
+
+                console.log(`Message from ${client}: ${message}`);
+                console.log(`Msg Type: ${typeof message}`);
+                console.log(`Msg toString: ${message.toString()}`);
+            }
+        } catch (error) {
+            console.error("Invalid message format.");
+        }
     });
 
     // Handle client disconnection
     socket.on("close", () => {
         console.log(`Connection closed.`);
 
-        const clientId = clients.get(socket);
-        
+        const { clientName, clientID } = clients.get(socket);
+        const client = clientName || `Guest ${clientID}`;
+
         socket.terminate();
         clients.delete(socket);
-        
+
         // Notify all clients when a user leaves the chat
-        broadcast(`Client ${clientId} left the room.`);
+        broadcast(`${client} left the room.`);
 
         // Close the WebSocket server if there are no connected clients
         if (wss.clients.size == 0) wss.close();
