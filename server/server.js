@@ -1,6 +1,6 @@
-const express = require("express");
-const http = require("http");
-const WebSocket = require("ws");
+import express from "express";
+import http from "http";
+import { WebSocketServer } from "ws";
 
 // Create an Express application
 const app = express();
@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Create a WebSocket server by attaching it to the HTTP server
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
 // Store connected clients
 const clients = new Map();
@@ -34,7 +34,10 @@ wss.on("connection", (socket) => {
                     clients.set(socket, { clientName: "", clientID: clientId });
                 } else {
                     // If the client joined with a name, store both name and ID
-                    clients.set(socket, { clientName: name, clientID: clientId });
+                    clients.set(socket, {
+                        clientName: name,
+                        clientID: clientId,
+                    });
                 }
 
                 const { clientName, clientID } = clients.get(socket);
@@ -47,7 +50,7 @@ wss.on("connection", (socket) => {
                 console.log(`Client Name: ${client}`);
             } else if (data.type === "message") {
                 const { message } = data;
-                
+
                 const { clientName, clientID } = clients.get(socket);
                 const client = clientName || `Guest ${clientID}`;
 
