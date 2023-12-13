@@ -262,6 +262,10 @@ const openModal = (socket) => {
             socket.send(JSON.stringify({ type: "name", name: "anonymous" }));
             closeModal(modal);
             resolve();
+
+            // Set the status to "Online" after the user joins
+            document.getElementById("client__connection-status").innerHTML =
+                "Online";
         };
 
         document.body.appendChild(modal);
