@@ -34,22 +34,22 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.getElementById("client__input-msg").value = "";
     };
 
+    // Send a message to the server when the "Send" button is clicked or Enter key is pressed
+    const inputMsg = document.getElementById("client__input-msg");
+
+    inputMsg.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            
+            sendMessage(socket, inputMsg);
+        }
+    });
+
     // Send a message to the server when the "Send" button is clicked
     document.getElementById("client__send-msg-btn").onclick = (e) => {
         e.preventDefault();
 
-        const message = document
-            .getElementById("client__input-msg")
-            .value.trim();
-
-        if (message) {
-            console.log(`Message to be send: ${message}`);
-            console.log(`Data type: ${typeof message}`);
-
-            socket.send(JSON.stringify({ type: "message", message }));
-        } else {
-            alert(`Please input your message.`);
-        }
+        sendMessage(socket, inputMsg);
     };
 
     // Close the WebSocket connection when the "Close" button is clicked
@@ -59,6 +59,20 @@ document.addEventListener("DOMContentLoaded", async function () {
         socket.close();
     };
 });
+
+const sendMessage = (socket, inputMsg) => {
+    const message = inputMsg.value.trim();
+
+    if (message) {
+        console.log(`Message to be sent: ${message}`);
+        console.log(`Data type: ${typeof message}`);
+
+        socket.send(JSON.stringify({ type: "message", message }));
+        inputMsg.value = "";
+    } else {
+        alert(`Please input your message.`);
+    }
+};
 
 // Initialize a modal
 const openModal = (socket) => {
