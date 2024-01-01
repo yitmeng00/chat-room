@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     inputMsg.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
-            
+
             sendMessage(socket, inputMsg);
         }
     });
@@ -55,6 +55,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Close the WebSocket connection when the "Close" button is clicked
     document.getElementById("client__close-connection-btn").onclick = (e) => {
         e.preventDefault();
+
+        const chatSpace = document.querySelector(".client__chatroom-container");
+        chatSpace.style.display = "none";
+
+        alert("You left the conversation.");
 
         socket.close();
     };
