@@ -24,13 +24,55 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Listen for messages from the server
     socket.onmessage = ({ data }) => {
-        console.log(`Message from server: ${data}`);
-        console.log(`Data type: ${typeof data}`);
+        const messageData = JSON.parse(data);
+        const { type, clientID, name, message, isSelf } = messageData;
 
-        // Create a new paragraph element to display the received message
+        console.log(`Message data from server:`, messageData);
+        console.log(`Data type of type: ${typeof type}`);
+        console.log(`Data type of client ID: ${typeof clientID}`);
+        console.log(`Data type of client Name: ${typeof name}`);
+        console.log(`Data type of message: ${typeof message}`);
+
+        let client, msg;
+
+        // Create a new message element
+        const conversationWrapper = document.getElementById("client__messages");
+        const msgContainer = document.createElement("div");
         const paragraph = document.createElement("p");
-        paragraph.innerHTML = data;
-        document.getElementById("client__messages").appendChild(paragraph);
+        const nameSection = document.createElement("span");
+
+        switch (type) {
+            case "join":
+                client = `${name} `;
+                msg = `joined the room.`;
+                break;
+            case "welcome":
+                client = "";
+                msg = `Welcome to the room!`;
+                break;
+            case "message":
+                client = isSelf ? `${name} (You): ` : `${name}: `;
+                msg = `${message}`;
+
+                if (isSelf) {
+                    nameSection.classList.add("text-blue-800");
+                }
+                break;
+            case "leave":
+                client = `${name} `;
+                msg = `left the room.`;
+                break;
+        }
+
+        nameSection.classList.add("font-bold");
+        nameSection.innerHTML = client;
+
+        paragraph.appendChild(nameSection);
+        paragraph.innerHTML += msg;
+
+        msgContainer.appendChild(paragraph);
+        conversationWrapper.appendChild(msgContainer);
+
         document.getElementById("client__input-msg").value = "";
     };
 
@@ -72,7 +114,9 @@ const sendMessage = (socket, inputMsg) => {
         console.log(`Message to be sent: ${message}`);
         console.log(`Data type: ${typeof message}`);
 
-        socket.send(JSON.stringify({ type: "message", message }));
+        const msgSendToServer = JSON.stringify({ type: "message", message });
+
+        socket.send(msgSendToServer);
         inputMsg.value = "";
     } else {
         alert(`Please input your message.`);
@@ -264,7 +308,9 @@ const openModal = (socket) => {
         joinButton.onclick = () => {
             const name = inputField.value.trim();
             if (name) {
-                socket.send(JSON.stringify({ type: "name", name }));
+                const msgSendToServer = JSON.stringify({ type: "name", name });
+
+                socket.send(msgSendToServer);
                 closeModal(modal);
                 resolve();
 
@@ -278,7 +324,12 @@ const openModal = (socket) => {
 
         // Join as a guest
         guestButton.onclick = () => {
-            socket.send(JSON.stringify({ type: "name", name: "anonymous" }));
+            const msgSendToServer = JSON.stringify({
+                type: "name",
+                name: "anonymous",
+            });
+
+            socket.send(msgSendToServer);
             closeModal(modal);
             resolve();
 

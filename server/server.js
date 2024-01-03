@@ -43,9 +43,22 @@ wss.on("connection", (socket) => {
                 const { clientName, clientID } = clients.get(socket);
                 const client = clientName || `Guest ${clientID}`;
 
-                broadcast(`${client} joined the room.`);
+                const broadcastData = {
+                    type: "join",
+                    clientID,
+                    name: client,
+                    message: "joined the room.",
+                };
+                broadcast(broadcastData);
 
-                socket.send("Welcome to the room!");
+                const msgSendToClient = JSON.stringify({
+                    type: "welcome",
+                    clientID,
+                    name: client,
+                    message: `Welcome to the room!`,
+                });
+
+                socket.send(msgSendToClient);
 
                 console.log(`Client Name: ${client}`);
             } else if (data.type === "message") {
@@ -54,7 +67,13 @@ wss.on("connection", (socket) => {
                 const { clientName, clientID } = clients.get(socket);
                 const client = clientName || `Guest ${clientID}`;
 
-                broadcast(`${client}: ${message}`);
+                const broadcastData = {
+                    type: "message",
+                    clientID,
+                    name: client,
+                    message,
+                };
+                broadcast(broadcastData);
 
                 console.log(`Message from ${client}: ${message}`);
                 console.log(`Msg Type: ${typeof message}`);
@@ -69,14 +88,21 @@ wss.on("connection", (socket) => {
     socket.on("close", () => {
         console.log(`Connection closed.`);
 
-        const { clientName, clientID } = clients.get(socket);
-        const client = clientName || `Guest ${clientID}`;
+        if (wss.clients.size > 1) {
+            const { clientName, clientID } = clients.get(socket);
+            const client = clientName || `Guest ${clientID}`;
 
-        socket.terminate();
-        clients.delete(socket);
+            socket.terminate();
 
-        // Notify all clients when a user leaves the chat
-        broadcast(`${client} left the room.`);
+            const broadcastData = {
+                type: "leave",
+                clientID,
+                name: client,
+                message: `left the room.`,
+            };
+            // Notify all clients when a user leaves the chat
+            broadcast(broadcastData);
+        }
 
         // Close the WebSocket server if there are no connected clients
         if (wss.clients.size == 0) wss.close();
@@ -87,10 +113,16 @@ wss.on("close", () => {
     console.log(`Server is closed`);
 });
 
-function broadcast(message) {
-    clients.forEach((clientId, client) => {
+function broadcast(broadcastData) {
+    clients.forEach((socketData, client) => {
         if (client.readyState === 1) {
-            client.send(message);
+            const { clientID } = broadcastData;
+            const msgDataSendToClient = JSON.stringify({
+                ...broadcastData,
+                isSelf: socketData.clientID === clientID ? true : false,
+            });
+
+            client.send(msgDataSendToClient);
         } else {
             console.error("WebSocket connection is not open.");
         }
