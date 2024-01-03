@@ -88,19 +88,21 @@ wss.on("connection", (socket) => {
     socket.on("close", () => {
         console.log(`Connection closed.`);
 
-        const { clientName, clientID } = clients.get(socket);
-        const client = clientName || `Guest ${clientID}`;
+        if (wss.clients.size > 1) {
+            const { clientName, clientID } = clients.get(socket);
+            const client = clientName || `Guest ${clientID}`;
 
-        socket.terminate();
+            socket.terminate();
 
-        const broadcastData = {
-            type: "leave",
-            clientID,
-            name: client,
-            message: `left the room.`,
-        };
-        // Notify all clients when a user leaves the chat
-        broadcast(broadcastData);
+            const broadcastData = {
+                type: "leave",
+                clientID,
+                name: client,
+                message: `left the room.`,
+            };
+            // Notify all clients when a user leaves the chat
+            broadcast(broadcastData);
+        }
 
         // Close the WebSocket server if there are no connected clients
         if (wss.clients.size == 0) wss.close();
@@ -112,9 +114,13 @@ wss.on("close", () => {
 });
 
 function broadcast(broadcastData) {
-    clients.forEach((clientId, client) => {
+    clients.forEach((socketData, client) => {
         if (client.readyState === 1) {
-            const msgDataSendToClient = JSON.stringify(broadcastData);
+            const { clientID } = broadcastData;
+            const msgDataSendToClient = JSON.stringify({
+                ...broadcastData,
+                isSelf: socketData.clientID === clientID ? true : false,
+            });
 
             client.send(msgDataSendToClient);
         } else {

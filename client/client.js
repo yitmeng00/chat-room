@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Listen for messages from the server
     socket.onmessage = ({ data }) => {
         const messageData = JSON.parse(data);
-        const { type, clientID, name, message } = messageData;
+        const { type, clientID, name, message, isSelf } = messageData;
 
         console.log(`Message data from server:`, messageData);
         console.log(`Data type of type: ${typeof type}`);
@@ -33,26 +33,46 @@ document.addEventListener("DOMContentLoaded", async function () {
         console.log(`Data type of client Name: ${typeof name}`);
         console.log(`Data type of message: ${typeof message}`);
 
-        let msg;
+        let client, msg;
+
+        // Create a new message element
+        const conversationWrapper = document.getElementById("client__messages");
+        const msgContainer = document.createElement("div");
+        const paragraph = document.createElement("p");
+        const nameSection = document.createElement("span");
+
         switch (type) {
             case "join":
-                msg = `${name} joined the room.`;
+                client = `${name} `;
+                msg = `joined the room.`;
                 break;
             case "welcome":
+                client = "";
                 msg = `Welcome to the room!`;
                 break;
             case "message":
-                msg = `${name}: ${message}`;
+                client = isSelf ? `${name} (You): ` : `${name}: `;
+                msg = `${message}`;
+
+                if (isSelf) {
+                    nameSection.classList.add("text-blue-800");
+                }
                 break;
             case "leave":
-                msg = `${name} left the room.`;
+                client = `${name} `;
+                msg = `left the room.`;
                 break;
         }
 
-        // Create a new paragraph element to display the received message
-        const paragraph = document.createElement("p");
-        paragraph.innerHTML = msg;
-        document.getElementById("client__messages").appendChild(paragraph);
+        nameSection.classList.add("font-bold");
+        nameSection.innerHTML = client;
+
+        paragraph.appendChild(nameSection);
+        paragraph.innerHTML += msg;
+
+        msgContainer.appendChild(paragraph);
+        conversationWrapper.appendChild(msgContainer);
+
         document.getElementById("client__input-msg").value = "";
     };
 
