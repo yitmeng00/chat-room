@@ -173,8 +173,7 @@ const openModal = (socket) => {
         modalHeader.classList.add(
             "border-b",
             "border-gray",
-            "px-6",
-            "py-3",
+            "p-3",
             "flex",
             "flex-row-reverse"
         );
