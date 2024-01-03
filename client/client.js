@@ -24,15 +24,34 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Listen for messages from the server
     socket.onmessage = ({ data }) => {
-        const msg = JSON.parse(data);
-        const { message } = msg;
+        const messageData = JSON.parse(data);
+        const { type, clientID, name, message } = messageData;
 
-        console.log(`Message from server: ${message}`);
-        console.log(`Data type: ${typeof message}`);
+        console.log(`Message data from server:`, messageData);
+        console.log(`Data type of type: ${typeof type}`);
+        console.log(`Data type of client ID: ${typeof clientID}`);
+        console.log(`Data type of client Name: ${typeof name}`);
+        console.log(`Data type of message: ${typeof message}`);
+
+        let msg;
+        switch (type) {
+            case "join":
+                msg = `${name} joined the room.`;
+                break;
+            case "welcome":
+                msg = `Welcome to the room!`;
+                break;
+            case "message":
+                msg = `${name}: ${message}`;
+                break;
+            case "leave":
+                msg = `${name} left the room.`;
+                break;
+        }
 
         // Create a new paragraph element to display the received message
         const paragraph = document.createElement("p");
-        paragraph.innerHTML = message;
+        paragraph.innerHTML = msg;
         document.getElementById("client__messages").appendChild(paragraph);
         document.getElementById("client__input-msg").value = "";
     };

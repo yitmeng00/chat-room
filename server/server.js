@@ -43,10 +43,19 @@ wss.on("connection", (socket) => {
                 const { clientName, clientID } = clients.get(socket);
                 const client = clientName || `Guest ${clientID}`;
 
-                broadcast(`${client} joined the room.`);
+                const broadcastData = {
+                    type: "join",
+                    clientID,
+                    name: client,
+                    message: "joined the room.",
+                };
+                broadcast(broadcastData);
 
                 const msgSendToClient = JSON.stringify({
-                    message: "Welcome to the room!",
+                    type: "welcome",
+                    clientID,
+                    name: client,
+                    message: `Welcome to the room!`,
                 });
 
                 socket.send(msgSendToClient);
@@ -58,7 +67,13 @@ wss.on("connection", (socket) => {
                 const { clientName, clientID } = clients.get(socket);
                 const client = clientName || `Guest ${clientID}`;
 
-                broadcast(`${client}: ${message}`);
+                const broadcastData = {
+                    type: "message",
+                    clientID,
+                    name: client,
+                    message,
+                };
+                broadcast(broadcastData);
 
                 console.log(`Message from ${client}: ${message}`);
                 console.log(`Msg Type: ${typeof message}`);
@@ -78,8 +93,14 @@ wss.on("connection", (socket) => {
 
         socket.terminate();
 
+        const broadcastData = {
+            type: "leave",
+            clientID,
+            name: client,
+            message: `left the room.`,
+        };
         // Notify all clients when a user leaves the chat
-        broadcast(`${client} left the room.`);
+        broadcast(broadcastData);
 
         // Close the WebSocket server if there are no connected clients
         if (wss.clients.size == 0) wss.close();
@@ -90,14 +111,12 @@ wss.on("close", () => {
     console.log(`Server is closed`);
 });
 
-function broadcast(message) {
+function broadcast(broadcastData) {
     clients.forEach((clientId, client) => {
         if (client.readyState === 1) {
-            const msgSendToClient = JSON.stringify({
-                message,
-            });
+            const msgDataSendToClient = JSON.stringify(broadcastData);
 
-            client.send(msgSendToClient);
+            client.send(msgDataSendToClient);
         } else {
             console.error("WebSocket connection is not open.");
         }
