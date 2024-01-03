@@ -24,12 +24,15 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Listen for messages from the server
     socket.onmessage = ({ data }) => {
-        console.log(`Message from server: ${data}`);
-        console.log(`Data type: ${typeof data}`);
+        const msg = JSON.parse(data);
+        const { message } = msg;
+
+        console.log(`Message from server: ${message}`);
+        console.log(`Data type: ${typeof message}`);
 
         // Create a new paragraph element to display the received message
         const paragraph = document.createElement("p");
-        paragraph.innerHTML = data;
+        paragraph.innerHTML = message;
         document.getElementById("client__messages").appendChild(paragraph);
         document.getElementById("client__input-msg").value = "";
     };
@@ -72,7 +75,9 @@ const sendMessage = (socket, inputMsg) => {
         console.log(`Message to be sent: ${message}`);
         console.log(`Data type: ${typeof message}`);
 
-        socket.send(JSON.stringify({ type: "message", message }));
+        const msgSendToServer = JSON.stringify({ type: "message", message });
+
+        socket.send(msgSendToServer);
         inputMsg.value = "";
     } else {
         alert(`Please input your message.`);
@@ -264,7 +269,9 @@ const openModal = (socket) => {
         joinButton.onclick = () => {
             const name = inputField.value.trim();
             if (name) {
-                socket.send(JSON.stringify({ type: "name", name }));
+                const msgSendToServer = JSON.stringify({ type: "name", name });
+
+                socket.send(msgSendToServer);
                 closeModal(modal);
                 resolve();
 
@@ -278,7 +285,12 @@ const openModal = (socket) => {
 
         // Join as a guest
         guestButton.onclick = () => {
-            socket.send(JSON.stringify({ type: "name", name: "anonymous" }));
+            const msgSendToServer = JSON.stringify({
+                type: "name",
+                name: "anonymous",
+            });
+
+            socket.send(msgSendToServer);
             closeModal(modal);
             resolve();
 

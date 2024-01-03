@@ -45,7 +45,11 @@ wss.on("connection", (socket) => {
 
                 broadcast(`${client} joined the room.`);
 
-                socket.send("Welcome to the room!");
+                const msgSendToClient = JSON.stringify({
+                    message: "Welcome to the room!",
+                });
+
+                socket.send(msgSendToClient);
 
                 console.log(`Client Name: ${client}`);
             } else if (data.type === "message") {
@@ -73,7 +77,6 @@ wss.on("connection", (socket) => {
         const client = clientName || `Guest ${clientID}`;
 
         socket.terminate();
-        clients.delete(socket);
 
         // Notify all clients when a user leaves the chat
         broadcast(`${client} left the room.`);
@@ -90,7 +93,11 @@ wss.on("close", () => {
 function broadcast(message) {
     clients.forEach((clientId, client) => {
         if (client.readyState === 1) {
-            client.send(message);
+            const msgSendToClient = JSON.stringify({
+                message,
+            });
+
+            client.send(msgSendToClient);
         } else {
             console.error("WebSocket connection is not open.");
         }
