@@ -8,12 +8,28 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Handle WebSocket connection events
     // socket.onopen = () => {
     //     document.getElementById("client__connection-status").innerHTML =
-    //         "Online";
+    //         "Active";
     // };
 
     socket.onclose = () => {
-        document.getElementById("client__connection-status").innerHTML =
-            "Offline";
+        const connectionStatus = document.getElementById(
+            "client__connection-status"
+        );
+        connectionStatus.classList.add(
+            "inline-flex",
+            "items-center",
+            "rounded-md",
+            "bg-gray-50",
+            "px-2",
+            "py-1",
+            "text-xs",
+            "font-medium",
+            "text-gray-600",
+            "ring-1",
+            "ring-inset",
+            "ring-gray-500/10"
+        );
+        connectionStatus.innerHTML = "Inactive";
     };
 
     socket.onerror = (event) => {
@@ -313,9 +329,25 @@ const openModal = (socket) => {
                 closeModal(modal);
                 resolve();
 
-                // Set the status to "Online" after the user joins
-                document.getElementById("client__connection-status").innerHTML =
-                    "Online";
+                // Set the status to "Active" after the user joins
+                const connectionStatus = document.getElementById(
+                    "client__connection-status"
+                );
+                connectionStatus.classList.add(
+                    "inline-flex",
+                    "items-center",
+                    "rounded-md",
+                    "bg-green-50",
+                    "px-2",
+                    "py-1",
+                    "text-xs",
+                    "font-medium",
+                    "text-green-700",
+                    "ring-1",
+                    "ring-inset",
+                    "ring-green-600/20"
+                );
+                connectionStatus.innerHTML = "Active";
             } else {
                 alert("Please enter your name.");
             }
@@ -332,9 +364,25 @@ const openModal = (socket) => {
             closeModal(modal);
             resolve();
 
-            // Set the status to "Online" after the user joins
-            document.getElementById("client__connection-status").innerHTML =
-                "Online";
+            // Set the status to "Active" after the user joins
+            const connectionStatus = document.getElementById(
+                "client__connection-status"
+            );
+            connectionStatus.classList.add(
+                "inline-flex",
+                "items-center",
+                "rounded-md",
+                "bg-green-50",
+                "px-2",
+                "py-1",
+                "text-xs",
+                "font-medium",
+                "text-green-700",
+                "ring-1",
+                "ring-inset",
+                "ring-green-600/20"
+            );
+            connectionStatus.innerHTML = "Active";
         };
 
         document.body.appendChild(modal);
