@@ -88,7 +88,7 @@ wss.on("connection", (socket) => {
     socket.on("close", () => {
         console.log(`Connection closed.`);
 
-        if (wss.clients.size > 1) {
+        if (wss.clients.size >= 1) {
             const { clientName, clientID } = clients.get(socket);
             const client = clientName || `Guest ${clientID}`;
 
@@ -102,10 +102,10 @@ wss.on("connection", (socket) => {
             };
             // Notify all clients when a user leaves the chat
             broadcast(broadcastData);
+        } else {
+            // Close the WebSocket server if there are no connected clients
+            wss.close();
         }
-
-        // Close the WebSocket server if there are no connected clients
-        if (wss.clients.size == 0) wss.close();
     });
 });
 
@@ -115,6 +115,9 @@ wss.on("close", () => {
 
 function broadcast(broadcastData) {
     clients.forEach((socketData, client) => {
+        console.log(
+            `Client with ID (${socketData.clientID})'s readyState: ${client.readyState}`
+        );
         if (client.readyState === 1) {
             const { clientID } = broadcastData;
             const msgDataSendToClient = JSON.stringify({
@@ -124,7 +127,9 @@ function broadcast(broadcastData) {
 
             client.send(msgDataSendToClient);
         } else {
-            console.error("WebSocket connection is not open.");
+            console.error(
+                `WebSocket connection for client with ID ${socketData.clientID} is closed.`
+            );
         }
     });
 }
