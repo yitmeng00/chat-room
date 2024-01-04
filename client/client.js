@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         const connectionStatus = document.getElementById(
             "client__connection-status"
         );
+        connectionStatus.classList.remove(...connectionStatus.classList);
         connectionStatus.classList.add(
             "inline-flex",
             "items-center",
@@ -59,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         switch (type) {
             case "join":
-                client = `${name} `;
+                client = isSelf ? `${name} (You): ` : `${name}: `;
                 msg = `joined the room.`;
                 break;
             case "welcome":
@@ -69,15 +70,15 @@ document.addEventListener("DOMContentLoaded", async function () {
             case "message":
                 client = isSelf ? `${name} (You): ` : `${name}: `;
                 msg = `${message}`;
-
-                if (isSelf) {
-                    nameSection.classList.add("text-blue-800");
-                }
                 break;
             case "leave":
-                client = `${name} `;
+                client = isSelf ? `${name} (You): ` : `${name}: `;
                 msg = `left the room.`;
                 break;
+        }
+
+        if (isSelf) {
+            nameSection.classList.add("text-blue-800");
         }
 
         nameSection.classList.add("font-bold");
@@ -113,9 +114,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Close the WebSocket connection when the "Close" button is clicked
     document.getElementById("client__close-connection-btn").onclick = (e) => {
         e.preventDefault();
-
-        const chatSpace = document.querySelector(".client__chatroom-container");
-        chatSpace.style.display = "none";
 
         alert("You left the conversation.");
 
@@ -333,6 +331,9 @@ const openModal = (socket) => {
                 const connectionStatus = document.getElementById(
                     "client__connection-status"
                 );
+                connectionStatus.classList.remove(
+                    ...connectionStatus.classList
+                );
                 connectionStatus.classList.add(
                     "inline-flex",
                     "items-center",
@@ -368,6 +369,7 @@ const openModal = (socket) => {
             const connectionStatus = document.getElementById(
                 "client__connection-status"
             );
+            connectionStatus.classList.remove(...connectionStatus.classList);
             connectionStatus.classList.add(
                 "inline-flex",
                 "items-center",
