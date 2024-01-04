@@ -8,12 +8,29 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Handle WebSocket connection events
     // socket.onopen = () => {
     //     document.getElementById("client__connection-status").innerHTML =
-    //         "Online";
+    //         "Active";
     // };
 
     socket.onclose = () => {
-        document.getElementById("client__connection-status").innerHTML =
-            "Offline";
+        const connectionStatus = document.getElementById(
+            "client__connection-status"
+        );
+        connectionStatus.classList.remove(...connectionStatus.classList);
+        connectionStatus.classList.add(
+            "inline-flex",
+            "items-center",
+            "rounded-md",
+            "bg-gray-50",
+            "px-2",
+            "py-1",
+            "text-xs",
+            "font-medium",
+            "text-gray-600",
+            "ring-1",
+            "ring-inset",
+            "ring-gray-500/10"
+        );
+        connectionStatus.innerHTML = "Inactive";
     };
 
     socket.onerror = (event) => {
@@ -25,55 +42,64 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Listen for messages from the server
     socket.onmessage = ({ data }) => {
         const messageData = JSON.parse(data);
-        const { type, clientID, name, message, isSelf } = messageData;
+        const { type, clientID, name, message, isSelf, onlineCount } =
+            messageData;
 
-        console.log(`Message data from server:`, messageData);
-        console.log(`Data type of type: ${typeof type}`);
-        console.log(`Data type of client ID: ${typeof clientID}`);
-        console.log(`Data type of client Name: ${typeof name}`);
-        console.log(`Data type of message: ${typeof message}`);
+        if (type == "online_count") {
+            const onlineCountContent = document.getElementById(
+                "client__online-count"
+            );
+            onlineCountContent.innerHTML = `${onlineCount}`;
+        } else {
+            console.log(`Message data from server:`, messageData);
+            console.log(`Data type of type: ${typeof type}`);
+            console.log(`Data type of client ID: ${typeof clientID}`);
+            console.log(`Data type of client Name: ${typeof name}`);
+            console.log(`Data type of message: ${typeof message}`);
 
-        let client, msg;
+            let client, msg;
 
-        // Create a new message element
-        const conversationWrapper = document.getElementById("client__messages");
-        const msgContainer = document.createElement("div");
-        const paragraph = document.createElement("p");
-        const nameSection = document.createElement("span");
+            // Create a new message element
+            const conversationWrapper =
+                document.getElementById("client__messages");
+            const msgContainer = document.createElement("div");
+            const paragraph = document.createElement("p");
+            const nameSection = document.createElement("span");
 
-        switch (type) {
-            case "join":
-                client = `${name} `;
-                msg = `joined the room.`;
-                break;
-            case "welcome":
-                client = "";
-                msg = `Welcome to the room!`;
-                break;
-            case "message":
-                client = isSelf ? `${name} (You): ` : `${name}: `;
-                msg = `${message}`;
+            switch (type) {
+                case "join":
+                    client = isSelf ? `${name} (You): ` : `${name}: `;
+                    msg = `joined the room.`;
+                    break;
+                case "welcome":
+                    client = "";
+                    msg = `Welcome to the room!`;
+                    break;
+                case "message":
+                    client = isSelf ? `${name} (You): ` : `${name}: `;
+                    msg = `${message}`;
+                    break;
+                case "leave":
+                    client = isSelf ? `${name} (You): ` : `${name}: `;
+                    msg = `left the room.`;
+                    break;
+            }
 
-                if (isSelf) {
-                    nameSection.classList.add("text-blue-800");
-                }
-                break;
-            case "leave":
-                client = `${name} `;
-                msg = `left the room.`;
-                break;
+            if (isSelf) {
+                nameSection.classList.add("text-blue-800");
+            }
+
+            nameSection.classList.add("font-bold");
+            nameSection.innerHTML = client;
+
+            paragraph.appendChild(nameSection);
+            paragraph.innerHTML += msg;
+
+            msgContainer.appendChild(paragraph);
+            conversationWrapper.appendChild(msgContainer);
+
+            document.getElementById("client__input-msg").value = "";
         }
-
-        nameSection.classList.add("font-bold");
-        nameSection.innerHTML = client;
-
-        paragraph.appendChild(nameSection);
-        paragraph.innerHTML += msg;
-
-        msgContainer.appendChild(paragraph);
-        conversationWrapper.appendChild(msgContainer);
-
-        document.getElementById("client__input-msg").value = "";
     };
 
     // Send a message to the server when the "Send" button is clicked or Enter key is pressed
@@ -97,9 +123,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Close the WebSocket connection when the "Close" button is clicked
     document.getElementById("client__close-connection-btn").onclick = (e) => {
         e.preventDefault();
-
-        const chatSpace = document.querySelector(".client__chatroom-container");
-        chatSpace.style.display = "none";
 
         alert("You left the conversation.");
 
@@ -313,9 +336,28 @@ const openModal = (socket) => {
                 closeModal(modal);
                 resolve();
 
-                // Set the status to "Online" after the user joins
-                document.getElementById("client__connection-status").innerHTML =
-                    "Online";
+                // Set the status to "Active" after the user joins
+                const connectionStatus = document.getElementById(
+                    "client__connection-status"
+                );
+                connectionStatus.classList.remove(
+                    ...connectionStatus.classList
+                );
+                connectionStatus.classList.add(
+                    "inline-flex",
+                    "items-center",
+                    "rounded-md",
+                    "bg-green-50",
+                    "px-2",
+                    "py-1",
+                    "text-xs",
+                    "font-medium",
+                    "text-green-700",
+                    "ring-1",
+                    "ring-inset",
+                    "ring-green-600/20"
+                );
+                connectionStatus.innerHTML = "Active";
             } else {
                 alert("Please enter your name.");
             }
@@ -332,9 +374,26 @@ const openModal = (socket) => {
             closeModal(modal);
             resolve();
 
-            // Set the status to "Online" after the user joins
-            document.getElementById("client__connection-status").innerHTML =
-                "Online";
+            // Set the status to "Active" after the user joins
+            const connectionStatus = document.getElementById(
+                "client__connection-status"
+            );
+            connectionStatus.classList.remove(...connectionStatus.classList);
+            connectionStatus.classList.add(
+                "inline-flex",
+                "items-center",
+                "rounded-md",
+                "bg-green-50",
+                "px-2",
+                "py-1",
+                "text-xs",
+                "font-medium",
+                "text-green-700",
+                "ring-1",
+                "ring-inset",
+                "ring-green-600/20"
+            );
+            connectionStatus.innerHTML = "Active";
         };
 
         document.body.appendChild(modal);

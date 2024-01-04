@@ -26,11 +26,18 @@
                     class="client__chat-header p-3 bg-slate-300 flex justify-between items-center"
                 >
                     <section>
-                        <div>
-                            <p>
-                                <span class="font-bold">Status: </span>
-                                <span id="client__connection-status"></span>
-                            </p>
+                        <div class="flex gap-3">
+                            <div>
+                                <p>
+                                    <span id="client__connection-status"></span>
+                                </p>
+                            </div>
+                            <div class="flex items-center">
+                                <p class="text-sm font-bold text-gray-500">
+                                    Online client:
+                                    <span id="client__online-count" class="text-gray-700">-</span>
+                                </p>
+                            </div>
                         </div>
                     </section>
 
