@@ -13,6 +13,7 @@ const wss = new WebSocketServer({ server });
 
 // Store connected clients
 const clients = new Map();
+let onlineClientCount = 0;
 
 // WebSocket server event handling
 wss.on("connection", (socket) => {
@@ -61,6 +62,9 @@ wss.on("connection", (socket) => {
                 socket.send(msgSendToClient);
 
                 console.log(`Client Name: ${client}`);
+
+                onlineClientCount++;
+                updateOnlineClientCount();
             } else if (data.type === "message") {
                 const { message } = data;
 
@@ -102,6 +106,9 @@ wss.on("connection", (socket) => {
             };
             // Notify all clients when a user leaves the chat
             broadcast(broadcastData);
+
+            onlineClientCount--;
+            updateOnlineClientCount();
         } else {
             // Close the WebSocket server if there are no connected clients
             wss.close();
@@ -132,6 +139,15 @@ function broadcast(broadcastData) {
             );
         }
     });
+}
+
+function updateOnlineClientCount() {
+    // Notify all clients about the updated online client count
+    const broadcastData = {
+        type: "online_count",
+        onlineCount: onlineClientCount,
+    };
+    broadcast(broadcastData);
 }
 
 // Generate a random alphanumeric client ID
