@@ -32,13 +32,17 @@ This app was built using the following technologies:
 
 ## Installation
 
-To run this app locally, simply clone this repository and open the index.html file in your web browser.
+To run this app locally, clone this repository (https://github.com/yitmeng00/chat-room.git), and run the following commands.
 
 ```bash
-git clone https://github.com/yitmeng00/chat-room.git
-cd server
+cd client
+npm install
+cd ../server
+npm install
 npm run dev
 ```
+
+Then, open the index.html file in your web browser.
 
 ## License
 This project does not has any license.
