@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     socket.onclose = () => {
         const connectionStatus = document.getElementById(
-            "client__connection-status"
+            "client__connection-status",
         );
         connectionStatus.classList.remove(...connectionStatus.classList);
         connectionStatus.classList.add(
@@ -28,15 +28,14 @@ document.addEventListener("DOMContentLoaded", async function () {
             "text-gray-600",
             "ring-1",
             "ring-inset",
-            "ring-gray-500/10"
+            "ring-gray-500/10",
         );
         connectionStatus.innerHTML = "Inactive";
     };
 
     socket.onerror = (event) => {
-        document.getElementById(
-            "client__connection-status"
-        ).innerHTML = `Error Connecting to Server: ${event.message}`;
+        document.getElementById("client__connection-status").innerHTML =
+            `Error Connecting to Server: ${event.message}`;
     };
 
     // Listen for messages from the server
@@ -47,7 +46,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         if (type == "online_count") {
             const onlineCountContent = document.getElementById(
-                "client__online-count"
+                "client__online-count",
             );
             onlineCountContent.innerHTML = `${onlineCount}`;
         } else {
@@ -160,7 +159,7 @@ const openModal = (socket) => {
             "inset-0",
             "bg-gray-500",
             "bg-opacity-75",
-            "transition-opacity"
+            "transition-opacity",
         );
 
         // Create the modal overlay
@@ -170,7 +169,7 @@ const openModal = (socket) => {
             "inset-0",
             "z-10",
             "w-screen",
-            "overflow-y-auto"
+            "overflow-y-auto",
         );
 
         const overlay2 = document.createElement("div");
@@ -178,7 +177,7 @@ const openModal = (socket) => {
             "flex",
             "min-h-full",
             "justify-center",
-            "items-center"
+            "items-center",
         );
 
         // Create the modal content
@@ -188,7 +187,7 @@ const openModal = (socket) => {
             "rounded-lg",
             "bg-white",
             "shadow-xl",
-            "transition-all"
+            "transition-all",
         );
 
         // Create the modal header
@@ -198,7 +197,7 @@ const openModal = (socket) => {
             "border-gray",
             "p-3",
             "flex",
-            "flex-row-reverse"
+            "flex-row-reverse",
         );
 
         const closeButton = document.createElement("button");
@@ -207,7 +206,8 @@ const openModal = (socket) => {
             "fa-solid",
             "fa-xmark",
             "fa-xl",
-            "hover:text-red-600"
+            "hover:text-red-600",
+            "cursor-pointer",
         );
 
         modalHeader.appendChild(closeButton);
@@ -224,7 +224,7 @@ const openModal = (socket) => {
             "w-10",
             "items-center",
             "justify-center",
-            "rounded-full"
+            "rounded-full",
         );
 
         const avatarIcon = document.createElement("i");
@@ -249,7 +249,7 @@ const openModal = (socket) => {
             "border",
             "border-black",
             "w-full",
-            "rounded-md"
+            "rounded-md",
         );
 
         input.appendChild(inputField);
@@ -267,7 +267,7 @@ const openModal = (socket) => {
             "py-4",
             "flex",
             "flex-row-reverse",
-            "gap-3"
+            "gap-3",
         );
 
         const joinButton = document.createElement("button");
@@ -286,7 +286,8 @@ const openModal = (socket) => {
             "ring-1",
             "ring-inset",
             "ring-gray-300",
-            "hover:bg-gray-50"
+            "hover:bg-gray-50",
+            "cursor-pointer",
         );
         joinButton.textContent = "Join";
 
@@ -306,7 +307,8 @@ const openModal = (socket) => {
             "ring-1",
             "ring-inset",
             "ring-gray-300",
-            "hover:bg-gray-50"
+            "hover:bg-gray-50",
+            "cursor-pointer",
         );
         guestButton.textContent = "Join as a guest";
 
@@ -338,10 +340,10 @@ const openModal = (socket) => {
 
                 // Set the status to "Active" after the user joins
                 const connectionStatus = document.getElementById(
-                    "client__connection-status"
+                    "client__connection-status",
                 );
                 connectionStatus.classList.remove(
-                    ...connectionStatus.classList
+                    ...connectionStatus.classList,
                 );
                 connectionStatus.classList.add(
                     "inline-flex",
@@ -355,7 +357,7 @@ const openModal = (socket) => {
                     "text-green-700",
                     "ring-1",
                     "ring-inset",
-                    "ring-green-600/20"
+                    "ring-green-600/20",
                 );
                 connectionStatus.innerHTML = "Active";
             } else {
@@ -376,7 +378,7 @@ const openModal = (socket) => {
 
             // Set the status to "Active" after the user joins
             const connectionStatus = document.getElementById(
-                "client__connection-status"
+                "client__connection-status",
             );
             connectionStatus.classList.remove(...connectionStatus.classList);
             connectionStatus.classList.add(
@@ -391,7 +393,7 @@ const openModal = (socket) => {
                 "text-green-700",
                 "ring-1",
                 "ring-inset",
-                "ring-green-600/20"
+                "ring-green-600/20",
             );
             connectionStatus.innerHTML = "Active";
         };
