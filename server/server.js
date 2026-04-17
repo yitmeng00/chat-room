@@ -1,167 +1,154 @@
 import express from "express";
 import http from "http";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 
-// Create an Express application
+const PORT = process.env.PORT || 3000;
+
+const MESSAGE_TYPES = Object.freeze({
+    NAME: "name",
+    MESSAGE: "message",
+    JOIN: "join",
+    WELCOME: "welcome",
+    LEAVE: "leave",
+    ONLINE_COUNT: "online_count",
+});
+
+const MAX_NAME_LENGTH = 50;
+const MAX_MESSAGE_LENGTH = 500;
+
 const app = express();
-
-// Create an HTTP server using Express app
 const server = http.createServer(app);
-
-// Create a WebSocket server by attaching it to the HTTP server
 const wss = new WebSocketServer({ server });
 
-// Store connected clients
 const clients = new Map();
 let onlineClientCount = 0;
 
-// WebSocket server event handling
 wss.on("connection", (socket) => {
-    console.log(`Connection started.`);
+    console.log("Client connected.");
 
-    // Handle incoming messages from clients
-    socket.on("message", (messages) => {
+    socket.on("message", (data) => {
         try {
-            const data = JSON.parse(messages);
+            const payload = JSON.parse(data);
 
-            if (data.type === "name") {
-                const { name } = data;
-
-                // Generate a unique client ID
+            if (payload.type === MESSAGE_TYPES.NAME) {
+                const rawName =
+                    typeof payload.name === "string" ? payload.name.trim() : "";
+                const name = rawName.slice(0, MAX_NAME_LENGTH);
                 const clientId = generateClientId();
 
-                if (name === "anonymous") {
-                    // If the client joined as a guest, store the ID and an empty name
-                    clients.set(socket, { clientName: "", clientID: clientId });
-                } else {
-                    // If the client joined with a name, store both name and ID
-                    clients.set(socket, {
-                        clientName: name,
-                        clientID: clientId,
-                    });
-                }
-
-                const { clientName, clientID } = clients.get(socket);
-                const client = clientName || `Guest ${clientID}`;
-
-                const broadcastData = {
-                    type: "join",
-                    clientID,
-                    name: client,
-                    message: "joined the room.",
-                };
-                broadcast(broadcastData);
-
-                const msgSendToClient = JSON.stringify({
-                    type: "welcome",
-                    clientID,
-                    name: client,
-                    message: `Welcome to the room!`,
+                clients.set(socket, {
+                    clientName: name === "anonymous" ? "" : name,
+                    clientID: clientId,
                 });
 
-                socket.send(msgSendToClient);
+                const { clientName, clientID } = clients.get(socket);
+                const displayName = clientName || `Guest ${clientID}`;
 
-                console.log(`Client Name: ${client}`);
+                broadcast({
+                    type: MESSAGE_TYPES.JOIN,
+                    clientID,
+                    name: displayName,
+                    message: "joined the room.",
+                });
+
+                socket.send(
+                    JSON.stringify({
+                        type: MESSAGE_TYPES.WELCOME,
+                        clientID,
+                        name: displayName,
+                        message: "Welcome to the room!",
+                    }),
+                );
+
+                console.log(`${displayName} joined.`);
 
                 onlineClientCount++;
                 updateOnlineClientCount();
-            } else if (data.type === "message") {
-                const { message } = data;
+            } else if (payload.type === MESSAGE_TYPES.MESSAGE) {
+                if (!clients.has(socket)) return;
 
                 const { clientName, clientID } = clients.get(socket);
-                const client = clientName || `Guest ${clientID}`;
+                const displayName = clientName || `Guest ${clientID}`;
+                const message =
+                    typeof payload.message === "string"
+                        ? payload.message.trim().slice(0, MAX_MESSAGE_LENGTH)
+                        : "";
 
-                const broadcastData = {
-                    type: "message",
+                if (!message) return;
+
+                broadcast({
+                    type: MESSAGE_TYPES.MESSAGE,
                     clientID,
-                    name: client,
+                    name: displayName,
                     message,
-                };
-                broadcast(broadcastData);
+                });
 
-                console.log(`Message from ${client}: ${message}`);
-                console.log(`Msg Type: ${typeof message}`);
-                console.log(`Msg toString: ${message.toString()}`);
+                console.log(`Message from ${displayName}: ${message}`);
             }
         } catch (error) {
-            console.error("Invalid message format.");
+            console.error("Failed to process message:", error.message);
         }
     });
 
-    // Handle client disconnection
     socket.on("close", () => {
-        console.log(`Connection closed.`);
+        console.log("Client disconnected.");
 
-        if (wss.clients.size >= 1) {
-            const { clientName, clientID } = clients.get(socket);
-            const client = clientName || `Guest ${clientID}`;
+        if (!clients.has(socket)) return;
 
-            socket.terminate();
+        const { clientName, clientID } = clients.get(socket);
+        const displayName = clientName || `Guest ${clientID}`;
 
-            const broadcastData = {
-                type: "leave",
+        clients.delete(socket);
+        onlineClientCount--;
+
+        if (wss.clients.size > 0) {
+            broadcast({
+                type: MESSAGE_TYPES.LEAVE,
                 clientID,
-                name: client,
-                message: `left the room.`,
-            };
-            // Notify all clients when a user leaves the chat
-            broadcast(broadcastData);
-
-            onlineClientCount--;
+                name: displayName,
+                message: "left the room.",
+            });
             updateOnlineClientCount();
         } else {
-            // Close the WebSocket server if there are no connected clients
             wss.close();
         }
     });
 });
 
 wss.on("close", () => {
-    console.log(`Server is closed`);
+    console.log("WebSocket server closed.");
 });
 
-function broadcast(broadcastData) {
-    clients.forEach((socketData, client) => {
-        console.log(
-            `Client with ID (${socketData.clientID})'s readyState: ${client.readyState}`
-        );
-        if (client.readyState === 1) {
-            const { clientID } = broadcastData;
-            const msgDataSendToClient = JSON.stringify({
-                ...broadcastData,
-                isSelf: socketData.clientID === clientID ? true : false,
-            });
+const broadcast = (broadcastData) => {
+    const { clientID } = broadcastData;
 
-            client.send(msgDataSendToClient);
-        } else {
-            console.error(
-                `WebSocket connection for client with ID ${socketData.clientID} is closed.`
+    clients.forEach((socketData, client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(
+                JSON.stringify({
+                    ...broadcastData,
+                    isSelf: socketData.clientID === clientID,
+                }),
             );
         }
     });
-}
+};
 
-function updateOnlineClientCount() {
-    // Notify all clients about the updated online client count
-    const broadcastData = {
-        type: "online_count",
+const updateOnlineClientCount = () => {
+    broadcast({
+        type: MESSAGE_TYPES.ONLINE_COUNT,
         onlineCount: onlineClientCount,
-    };
-    broadcast(broadcastData);
-}
+    });
+};
 
-// Generate a random alphanumeric client ID
-function generateClientId() {
+const generateClientId = () => {
     return Math.random().toString(36).substring(2, 11);
-}
+};
 
-// Define a route
-app.get("/", (req, res) => {
-    res.send(`Hello, World!`);
+app.get("/", (_req, res) => {
+    res.send("Hello, World!");
 });
 
-// Start the server
-const port = process.env.PORT || 3000;
-server.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });

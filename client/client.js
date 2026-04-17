@@ -1,315 +1,298 @@
-document.addEventListener("DOMContentLoaded", async function () {
-    // Create a WebSocket connection to the server
-    const socket = new WebSocket("ws://127.0.0.1:3000/server/");
+const WS_URL = "ws://127.0.0.1:3000/server/";
 
-    // Open modal
-    await openModal(socket);
-
-    // Handle WebSocket connection events
-    // socket.onopen = () => {
-    //     document.getElementById("client__connection-status").innerHTML =
-    //         "Active";
-    // };
-
-    socket.onclose = () => {
-        const connectionStatus = document.getElementById(
-            "client__connection-status",
-        );
-        connectionStatus.classList.remove(...connectionStatus.classList);
-        connectionStatus.classList.add(
-            "inline-flex",
-            "items-center",
-            "rounded-md",
-            "bg-gray-50",
-            "px-2",
-            "py-1",
-            "text-xs",
-            "font-medium",
-            "text-gray-600",
-            "ring-1",
-            "ring-inset",
-            "ring-gray-500/10",
-        );
-        connectionStatus.innerHTML = "Inactive";
-    };
-
-    socket.onerror = (event) => {
-        document.getElementById("client__connection-status").innerHTML =
-            `Error Connecting to Server: ${event.message}`;
-    };
-
-    // Listen for messages from the server
-    socket.onmessage = ({ data }) => {
-        const messageData = JSON.parse(data);
-        const { type, clientID, name, message, isSelf, onlineCount } =
-            messageData;
-
-        if (type == "online_count") {
-            const onlineCountContent = document.getElementById(
-                "client__online-count",
-            );
-            onlineCountContent.innerHTML = `${onlineCount}`;
-        } else {
-            console.log(`Message data from server:`, messageData);
-            console.log(`Data type of type: ${typeof type}`);
-            console.log(`Data type of client ID: ${typeof clientID}`);
-            console.log(`Data type of client Name: ${typeof name}`);
-            console.log(`Data type of message: ${typeof message}`);
-
-            let client, msg;
-
-            // Create a new message element
-            const conversationWrapper =
-                document.getElementById("client__messages");
-            const msgContainer = document.createElement("div");
-            const paragraph = document.createElement("p");
-            const nameSection = document.createElement("span");
-
-            switch (type) {
-                case "join":
-                    client = isSelf ? `${name} (You): ` : `${name}: `;
-                    msg = `joined the room.`;
-                    break;
-                case "welcome":
-                    client = "";
-                    msg = `Welcome to the room!`;
-                    break;
-                case "message":
-                    client = isSelf ? `${name} (You): ` : `${name}: `;
-                    msg = `${message}`;
-                    break;
-                case "leave":
-                    client = isSelf ? `${name} (You): ` : `${name}: `;
-                    msg = `left the room.`;
-                    break;
-            }
-
-            if (isSelf) {
-                nameSection.classList.add("text-blue-800");
-            }
-
-            nameSection.classList.add("font-bold");
-            nameSection.innerHTML = client;
-
-            paragraph.appendChild(nameSection);
-            paragraph.innerHTML += msg;
-
-            msgContainer.appendChild(paragraph);
-            conversationWrapper.appendChild(msgContainer);
-
-            document.getElementById("client__input-msg").value = "";
-        }
-    };
-
-    // Send a message to the server when the "Send" button is clicked or Enter key is pressed
-    const inputMsg = document.getElementById("client__input-msg");
-
-    inputMsg.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-
-            sendMessage(socket, inputMsg);
-        }
-    });
-
-    // Send a message to the server when the "Send" button is clicked
-    document.getElementById("client__send-msg-btn").onclick = (e) => {
-        e.preventDefault();
-
-        sendMessage(socket, inputMsg);
-    };
-
-    // Close the WebSocket connection when the "Close" button is clicked
-    document.getElementById("client__close-connection-btn").onclick = (e) => {
-        e.preventDefault();
-
-        alert("You left the conversation.");
-
-        socket.close();
-    };
+const MESSAGE_TYPES = Object.freeze({
+    NAME: "name",
+    JOIN: "join",
+    WELCOME: "welcome",
+    MESSAGE: "message",
+    LEAVE: "leave",
+    ONLINE_COUNT: "online_count",
 });
 
-const sendMessage = (socket, inputMsg) => {
-    const message = inputMsg.value.trim();
+const ELEMENT_IDS = Object.freeze({
+    CONNECTION_STATUS: "client__connection-status",
+    ONLINE_COUNT: "client__online-count",
+    MESSAGES: "client__messages",
+    INPUT_MSG: "client__input-msg",
+    SEND_BTN: "client__send-msg-btn",
+    CLOSE_BTN: "client__close-connection-btn",
+});
 
-    if (message) {
-        console.log(`Message to be sent: ${message}`);
-        console.log(`Data type: ${typeof message}`);
+const createElement = (tag, classes = [], attrs = {}) => {
+    const el = document.createElement(tag);
+    if (classes.length) el.classList.add(...classes);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    return el;
+};
 
-        const msgSendToServer = JSON.stringify({ type: "message", message });
+const setConnectionStatus = (state) => {
+    const el = document.getElementById(ELEMENT_IDS.CONNECTION_STATUS);
+    el.className = "";
 
-        socket.send(msgSendToServer);
-        inputMsg.value = "";
+    if (state === "active") {
+        el.classList.add("inline-block", "w-2", "h-2", "rounded-full", "bg-green-400");
+        el.title = "Active";
     } else {
-        alert(`Please input your message.`);
+        el.classList.add("inline-block", "w-2", "h-2", "rounded-full", "bg-gray-500");
+        el.title = "Inactive";
     }
 };
 
-// Initialize a modal
+const scrollToBottom = () => {
+    const container = document.getElementById(ELEMENT_IDS.MESSAGES).parentElement;
+    container.scrollTop = container.scrollHeight;
+};
+
+const renderMessage = ({ type, name, message, isSelf }) => {
+    const messagesEl = document.getElementById(ELEMENT_IDS.MESSAGES);
+    let container;
+
+    if (type === MESSAGE_TYPES.MESSAGE) {
+        container = createElement("div", [
+            "flex",
+            "flex-col",
+            "mb-1",
+            ...(isSelf ? ["items-end"] : ["items-start"]),
+        ]);
+
+        if (!isSelf) {
+            const nameEl = createElement("span", [
+                "text-xs",
+                "text-gray-500",
+                "font-medium",
+                "ml-3",
+                "mb-0.5",
+            ]);
+            nameEl.textContent = name;
+            container.appendChild(nameEl);
+        }
+
+        const bubble = createElement("div", [
+            "max-w-xs",
+            "sm:max-w-sm",
+            "px-4",
+            "py-2",
+            "rounded-2xl",
+            "text-sm",
+            "break-words",
+            "leading-relaxed",
+            ...(isSelf
+                ? ["bg-indigo-500", "text-white", "rounded-tr-sm"]
+                : ["bg-white", "text-gray-800", "rounded-tl-sm", "shadow-sm"]),
+        ]);
+        bubble.textContent = message;
+        container.appendChild(bubble);
+    } else if (
+        type === MESSAGE_TYPES.JOIN ||
+        type === MESSAGE_TYPES.LEAVE ||
+        type === MESSAGE_TYPES.WELCOME
+    ) {
+        container = createElement("div", ["flex", "justify-center", "my-2"]);
+
+        const pill = createElement("span", [
+            "text-xs",
+            "text-gray-500",
+            "bg-gray-200",
+            "rounded-full",
+            "px-3",
+            "py-1",
+        ]);
+
+        if (type === MESSAGE_TYPES.WELCOME) {
+            pill.textContent = "Welcome to the room!";
+        } else if (type === MESSAGE_TYPES.JOIN) {
+            pill.textContent = isSelf ? "You joined the room" : `${name} joined the room`;
+        } else if (type === MESSAGE_TYPES.LEAVE) {
+            pill.textContent = isSelf ? "You left the room" : `${name} left the room`;
+        }
+
+        container.appendChild(pill);
+    } else {
+        return;
+    }
+
+    messagesEl.appendChild(container);
+    scrollToBottom();
+};
+
+const sendMessage = (socket, inputEl) => {
+    const message = inputEl.value.trim();
+
+    if (!message) {
+        alert("Please input your message.");
+        return;
+    }
+
+    if (socket.readyState !== WebSocket.OPEN) return;
+
+    socket.send(JSON.stringify({ type: MESSAGE_TYPES.MESSAGE, message }));
+    inputEl.value = "";
+};
+
+const closeModal = (modal) => {
+    if (modal) modal.style.display = "none";
+};
+
 const openModal = (socket) => {
     return new Promise((resolve) => {
-        // Create the modal container
-        const modal = document.createElement("div");
-        modal.id = "client__dynamic-modal";
-        modal.setAttribute("aria-labelledby", "modal-title");
-        modal.setAttribute("role", "dialog");
-        modal.setAttribute("aria-modal", "true");
-        modal.classList.add(
-            "fixed",
-            "inset-0",
-            "bg-gray-500",
-            "bg-opacity-75",
-            "transition-opacity",
+        const modal = createElement(
+            "div",
+            [
+                "fixed",
+                "inset-0",
+                "bg-black/60",
+                "transition-opacity",
+            ],
+            {
+                id: "client__dynamic-modal",
+                "aria-labelledby": "modal-title",
+                role: "dialog",
+                "aria-modal": "true",
+            },
         );
 
-        // Create the modal overlay
-        const overlay = document.createElement("div");
-        overlay.classList.add(
+        const overlay = createElement("div", [
             "fixed",
             "inset-0",
             "z-10",
             "w-screen",
             "overflow-y-auto",
-        );
-
-        const overlay2 = document.createElement("div");
-        overlay2.classList.add(
+        ]);
+        const overlay2 = createElement("div", [
             "flex",
             "min-h-full",
             "justify-center",
             "items-center",
-        );
-
-        // Create the modal content
-        const modalContent = document.createElement("div");
-        modalContent.classList.add(
+            "px-4",
+        ]);
+        const modalContent = createElement("div", [
+            "w-full",
+            "max-w-sm",
             "overflow-hidden",
-            "rounded-lg",
-            "bg-white",
-            "shadow-xl",
-            "transition-all",
-        );
+            "rounded-2xl",
+            "bg-slate-800",
+            "shadow-2xl",
+        ]);
 
-        // Create the modal header
-        const modalHeader = document.createElement("div");
-        modalHeader.classList.add(
-            "border-b",
-            "border-gray",
-            "p-3",
+        const modalHeader = createElement("div", [
+            "px-5",
+            "pt-4",
             "flex",
-            "flex-row-reverse",
-        );
-
-        const closeButton = document.createElement("button");
-        const closeButtonIcon = document.createElement("i");
-        closeButtonIcon.classList.add(
-            "fa-solid",
-            "fa-xmark",
-            "fa-xl",
-            "hover:text-red-600",
-            "cursor-pointer",
-        );
-
-        modalHeader.appendChild(closeButton);
-        closeButton.appendChild(closeButtonIcon);
-
-        // Create the modal body
-        const modalBody = document.createElement("div");
-        modalBody.classList.add("bg-white", "px-6", "py-4", "flex");
-
-        const avatarDiv = document.createElement("div");
-        avatarDiv.classList.add(
+            "justify-end",
+        ]);
+        const closeButton = createElement("button", [
+            "text-gray-400",
+            "hover:text-red-400",
+            "transition-colors",
+            "w-9",
+            "h-9",
             "flex",
-            "h-10",
-            "w-10",
             "items-center",
             "justify-center",
             "rounded-full",
+            "hover:bg-slate-700",
+            "cursor-pointer",
+        ]);
+        closeButton.appendChild(
+            createElement("i", ["fa-solid", "fa-xmark", "fa-lg"]),
+        );
+        modalHeader.appendChild(closeButton);
+
+        const modalBody = createElement("div", ["px-6", "pb-2", "pt-1"]);
+
+        const avatarDiv = createElement("div", [
+            "w-14",
+            "h-14",
+            "bg-indigo-500",
+            "rounded-full",
+            "flex",
+            "items-center",
+            "justify-center",
+            "mx-auto",
+            "mb-4",
+        ]);
+        avatarDiv.appendChild(
+            createElement("i", ["fa-regular", "fa-circle-user", "fa-2xl", "text-white"]),
         );
 
-        const avatarIcon = document.createElement("i");
-        avatarIcon.classList.add("fa-regular", "fa-circle-user", "fa-2xl");
-
-        avatarDiv.appendChild(avatarIcon);
-
-        const textDiv = document.createElement("div");
-        textDiv.classList.add("ml-4", "text-left", "grow");
-
-        const title = document.createElement("h3");
-        title.classList.add("text-base", "font-semibold");
+        const title = createElement("h3", [
+            "text-white",
+            "text-lg",
+            "font-semibold",
+            "text-center",
+            "mb-1",
+        ]);
         title.textContent = "Enter your name";
 
-        const input = document.createElement("div");
-        input.classList.add("mt-2");
+        const subtitle = createElement("p", [
+            "text-gray-400",
+            "text-sm",
+            "text-center",
+            "mb-4",
+        ]);
+        subtitle.textContent = "Choose a name to appear in the chat";
 
-        const inputField = document.createElement("input");
-        inputField.setAttribute("type", "text");
-        inputField.classList.add(
-            "p-2",
-            "border",
-            "border-black",
-            "w-full",
-            "rounded-md",
+        const inputWrapper = createElement("div");
+        const inputField = createElement(
+            "input",
+            [
+                "w-full",
+                "bg-slate-700",
+                "text-white",
+                "placeholder-gray-400",
+                "rounded-xl",
+                "px-4",
+                "py-3",
+                "text-sm",
+                "focus:outline-none",
+                "focus:ring-2",
+                "focus:ring-indigo-500",
+                "transition",
+            ],
+            { type: "text", placeholder: "Your name..." },
         );
-
-        input.appendChild(inputField);
-        textDiv.appendChild(title);
-        textDiv.appendChild(input);
+        inputWrapper.appendChild(inputField);
 
         modalBody.appendChild(avatarDiv);
-        modalBody.appendChild(textDiv);
+        modalBody.appendChild(title);
+        modalBody.appendChild(subtitle);
+        modalBody.appendChild(inputWrapper);
 
-        // Create the modal footer
-        const modalFooter = document.createElement("div");
-        modalFooter.classList.add(
-            "bg-gray-50",
+        const modalFooter = createElement("div", [
             "px-6",
             "py-4",
             "flex",
-            "flex-row-reverse",
-            "gap-3",
-        );
+            "flex-col",
+            "gap-2",
+        ]);
 
-        const joinButton = document.createElement("button");
-        joinButton.setAttribute("type", "button");
-        joinButton.classList.add(
-            "w-auto",
-            "justify-center",
-            "rounded-md",
-            "bg-white",
-            "px-3",
-            "py-2",
+        const joinButton = createElement("button", [
+            "w-full",
+            "bg-indigo-500",
+            "hover:bg-indigo-600",
+            "active:bg-indigo-700",
+            "text-white",
+            "rounded-xl",
+            "py-2.5",
             "text-sm",
             "font-semibold",
-            "text-gray-900",
-            "shadow-sm",
-            "ring-1",
-            "ring-inset",
-            "ring-gray-300",
-            "hover:bg-gray-50",
+            "transition-colors",
             "cursor-pointer",
-        );
+        ], { type: "button" });
         joinButton.textContent = "Join";
 
-        const guestButton = document.createElement("button");
-        guestButton.setAttribute("type", "button");
-        guestButton.classList.add(
-            "w-auto",
-            "justify-center",
-            "rounded-md",
-            "bg-white",
-            "px-3",
-            "py-2",
+        const guestButton = createElement("button", [
+            "w-full",
+            "bg-slate-700",
+            "hover:bg-slate-600",
+            "text-gray-300",
+            "rounded-xl",
+            "py-2.5",
             "text-sm",
             "font-semibold",
-            "text-gray-900",
-            "shadow-sm",
-            "ring-1",
-            "ring-inset",
-            "ring-gray-300",
-            "hover:bg-gray-50",
+            "transition-colors",
             "cursor-pointer",
-        );
+        ], { type: "button" });
         guestButton.textContent = "Join as a guest";
 
         modalFooter.appendChild(joinButton);
@@ -321,90 +304,74 @@ const openModal = (socket) => {
         modalContent.appendChild(modalHeader);
         modalContent.appendChild(modalBody);
         modalContent.appendChild(modalFooter);
+        document.body.appendChild(modal);
 
-        // Close modal action
+        const joinWithName = (name) => {
+            socket.send(JSON.stringify({ type: MESSAGE_TYPES.NAME, name }));
+            closeModal(modal);
+            setConnectionStatus("active");
+            resolve();
+        };
+
         closeButton.onclick = () => {
             closeModal(modal);
             resolve();
         };
 
-        // Join with name
         joinButton.onclick = () => {
             const name = inputField.value.trim();
             if (name) {
-                const msgSendToServer = JSON.stringify({ type: "name", name });
-
-                socket.send(msgSendToServer);
-                closeModal(modal);
-                resolve();
-
-                // Set the status to "Active" after the user joins
-                const connectionStatus = document.getElementById(
-                    "client__connection-status",
-                );
-                connectionStatus.classList.remove(
-                    ...connectionStatus.classList,
-                );
-                connectionStatus.classList.add(
-                    "inline-flex",
-                    "items-center",
-                    "rounded-md",
-                    "bg-green-50",
-                    "px-2",
-                    "py-1",
-                    "text-xs",
-                    "font-medium",
-                    "text-green-700",
-                    "ring-1",
-                    "ring-inset",
-                    "ring-green-600/20",
-                );
-                connectionStatus.innerHTML = "Active";
+                joinWithName(name);
             } else {
                 alert("Please enter your name.");
             }
         };
 
-        // Join as a guest
-        guestButton.onclick = () => {
-            const msgSendToServer = JSON.stringify({
-                type: "name",
-                name: "anonymous",
-            });
-
-            socket.send(msgSendToServer);
-            closeModal(modal);
-            resolve();
-
-            // Set the status to "Active" after the user joins
-            const connectionStatus = document.getElementById(
-                "client__connection-status",
-            );
-            connectionStatus.classList.remove(...connectionStatus.classList);
-            connectionStatus.classList.add(
-                "inline-flex",
-                "items-center",
-                "rounded-md",
-                "bg-green-50",
-                "px-2",
-                "py-1",
-                "text-xs",
-                "font-medium",
-                "text-green-700",
-                "ring-1",
-                "ring-inset",
-                "ring-green-600/20",
-            );
-            connectionStatus.innerHTML = "Active";
-        };
-
-        document.body.appendChild(modal);
+        guestButton.onclick = () => joinWithName("anonymous");
     });
 };
 
-// Close modal
-const closeModal = (modal) => {
-    if (modal) {
-        modal.style.display = "none";
-    }
-};
+document.addEventListener("DOMContentLoaded", async () => {
+    const socket = new WebSocket(WS_URL);
+
+    await openModal(socket);
+
+    socket.onclose = () => setConnectionStatus("inactive");
+
+    socket.onerror = () => {
+        document.getElementById(ELEMENT_IDS.CONNECTION_STATUS).textContent =
+            "Error: Unable to connect to server.";
+    };
+
+    socket.onmessage = ({ data }) => {
+        const messageData = JSON.parse(data);
+        const { type, onlineCount } = messageData;
+
+        if (type === MESSAGE_TYPES.ONLINE_COUNT) {
+            document.getElementById(ELEMENT_IDS.ONLINE_COUNT).textContent =
+                onlineCount;
+        } else {
+            renderMessage(messageData);
+        }
+    };
+
+    const inputMsg = document.getElementById(ELEMENT_IDS.INPUT_MSG);
+
+    inputMsg.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            sendMessage(socket, inputMsg);
+        }
+    });
+
+    document.getElementById(ELEMENT_IDS.SEND_BTN).onclick = (e) => {
+        e.preventDefault();
+        sendMessage(socket, inputMsg);
+    };
+
+    document.getElementById(ELEMENT_IDS.CLOSE_BTN).onclick = (e) => {
+        e.preventDefault();
+        alert("You left the conversation.");
+        socket.close();
+    };
+});
