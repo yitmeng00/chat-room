@@ -11,9 +11,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@tailwindcss/cli": "^4.2.2",
-    "autoprefixer": "^10.4.27",
-    "postcss": "^8.5.9",
-    "tailwindcss": "^4.2.2"
+    "@tailwindcss/cli": "^4.3.5",
+    "autoprefixer": "^10.7.0",
+    "postcss": "^8.5.33",
+    "tailwindcss": "^4.3.5"
   }
 }
