@@ -1,7 +1,7 @@
 # Chat Room
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 
 > A lightweight, real-time chat application built with vanilla JavaScript, Node.js, and WebSockets.
 
@@ -97,7 +97,7 @@ The server maintains a `Map<WebSocket, clientData>` for active sessions. Every i
 | Icons | Font Awesome v6 (CDN) |
 | Backend | Node.js, Express v5 |
 | WebSocket | `ws` v8 |
-| Dev tooling | Nodemon, PostCSS, Autoprefixer |
+| Dev tooling | Nodemon, Tailwind CLI |
 
 ---
 
@@ -105,7 +105,7 @@ The server maintains a `Map<WebSocket, clientData>` for active sessions. Every i
 
 ### Prerequisites
 
-- **Node.js** 18 or later
+- **Node.js** 20 or later
 - **npm** 9 or later
 
 ### Installation
@@ -114,10 +114,10 @@ The server maintains a `Map<WebSocket, clientData>` for active sessions. Every i
 git clone https://github.com/yitmeng00/chat-room.git
 cd chat-room
 
-# Install client dependencies and build CSS
+# Install client dependencies and build CSS once
 cd client
 npm install
-npm run build:css
+npx tailwindcss -i src/input.css -o dist/output.css
 
 # Install server dependencies
 cd ../server
@@ -127,14 +127,33 @@ npm install
 ### Running Locally
 
 ```bash
-# In one terminal — start the server
+# Terminal 1 — start the server (auto-restarts via nodemon)
 cd server
-npm run dev      # auto-restarts via nodemon
+npm run dev
+
+# Terminal 2 (optional) — rebuild CSS on change while editing the client
+cd client
+npm run build:css    # runs in watch mode; stop with Ctrl+C
 
 # Then open client/index.html directly in your browser
 ```
 
-The server listens on `http://localhost:3000` by default. The WebSocket endpoint is exposed at `ws://localhost:3000`.
+The server listens on `http://localhost:3000` by default. The client connects to the WebSocket endpoint at `ws://127.0.0.1:3000/server/`.
+
+### Running in Production
+
+```bash
+cd server
+npm ci --omit=dev    # installs runtime dependencies only (no nodemon)
+npm start
+```
+
+For a minified stylesheet, build the client CSS with:
+
+```bash
+cd client
+npx tailwindcss -i src/input.css -o dist/output.css --minify
+```
 
 ---
 
@@ -166,11 +185,13 @@ chat-room/
 |---|---|---|
 | `PORT` | `3000` | Port the Express / WebSocket server binds to |
 
-Set the variable in your shell or a `.env` file before starting the server:
+Set the variable in your shell when starting the server:
 
 ```bash
 PORT=8080 npm run dev
 ```
+
+> **Note:** The client's WebSocket URL is hardcoded in `client/client.js` (`WS_URL`). If you change the port or host the server elsewhere, update `WS_URL` to match.
 
 ---
 
